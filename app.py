@@ -7,7 +7,7 @@ from PIL import Image
 st.set_page_config(page_title="AungMyinMhu AI Architect Pro", layout="centered")
 
 # --- API KEY CONFIG ---
-# လူကြီးမင်း၏ API Key ကို ဒီမှာ သေချာပြန်ထည့်ပေးပါဗျ
+# လူကြီးမင်း၏ API Key ကို ဒီနေရာမှာ သေချာပြန်ထည့်ပေးပါဗျ
 GEMINI_API_KEY = "AIzaSyCiECGk368a5xVYmI5ZNwTj7exGCVr5yYw" 
 genai.configure(api_key=GEMINI_API_KEY)
 
@@ -34,18 +34,18 @@ if uploaded_file is not None:
 
 # Generate Button
 if st.button("✨ ဒီဇိုင်းအသစ် ဖန်တီးရန်"):
-    if GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE" or GEMINI_API_KEY == "":
+    if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
         st.error("ကျေးဇူးပြု၍ API Key ကို GitHub က app.py ထဲမှာ သေချာထည့်ပေးပါဗျ။")
     else:
         with st.spinner("AI မှ ပုံကို လေ့လာပြီး ဒီဇိုင်းဆွဲပေးနေပါသည်..."):
             try:
-                # Model ကို gemini-1.5-flash သို့ ပြောင်းလိုက်ပါသည် (ပိုမို တည်ငြိမ်ပြီး အလုပ်လုပ်တာ မြန်ပါသည်)
+                # 404 မဖြစ်စေရန် gemini-1.5-flash သို့ ပြောင်းလဲထားပါသည်
                 model = genai.GenerativeModel('gemini-1.5-flash')
                 
                 prompt = f"Professional Architect for AungMyinMhu Construction. Generate 1 short, detailed image prompt for a {style} style {floors} home on {plot_size} plot with {rooms}."
                 
                 if uploaded_file is not None:
-                    prompt += " Look at the attached image carefully. Maintain the similar architectural vibes, roof color, and design elements but adapt it into the new layout."
+                    prompt += " Look at the attached image carefully. Maintain the architectural style and colors."
                     response = model.generate_content([prompt, img])
                 else:
                     response = model.generate_content(prompt)
@@ -54,13 +54,10 @@ if st.button("✨ ဒီဇိုင်းအသစ် ဖန်တီးရန�
                 
                 # Image Generation (Pollinations AI)
                 encoded_prompt = urllib.parse.quote(generated_prompt)
-                image_url_3d = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed=123"
+                image_url_3d = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
                 
-                st.success("Reference ကို အခြေခံပြီး ဒီဇိုင်းအသစ် ထွက်လာပါပြီ!")
+                st.success("ဒီဇိုင်းအသစ် ထွက်လာပါပြီ!")
                 st.image(image_url_3d, caption="AungMyinMhu New Design Result", use_column_width=True)
-                
-                with st.expander("AI က ထုတ်ပေးလိုက်သော Prompt ကို ကြည့်ရန်"):
-                    st.write(generated_prompt)
 
             except Exception as e:
                 st.error(f"Error တက်သွားပါသည်: {e}")
