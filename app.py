@@ -1,17 +1,18 @@
 import streamlit as st
 import google.generativeai as genai
 import urllib.parse
+from PIL import Image
 
 # Page Configuration
 st.set_page_config(page_title="AungMyinMhu AI Architect Pro", layout="centered")
 
 # --- API KEY CONFIG ---
-# လူကြီးမင်း၏ API Key ကို ဒီမှာ ထည့်သွင်းပါ
-GEMINI_API_KEY = "AIzaSyCiECGk368a5xVYmI5ZNwTj7exGCVr5yYw"
+# လူကြီးမင်း၏ API Key ကို ဒီမှာ သေချာပြန်ထည့်ပေးပါဗျ
+GEMINI_API_KEY = "AIzaSyCiECGk368a5xVYmI5ZNwTj7exGCVr5yYw" 
 genai.configure(api_key=GEMINI_API_KEY)
 
-# --- APP UI ---
-st.markdown("<h1 style='text-align: center; color: #d4af37;'>🏠 AungMyinMhu AI Architect Pro</h1>", unsafe_content_factory=True)
+# Title with HTML
+st.markdown("<h1 style='text-align: center; color: #d4af37;'>🏠 AungMyinMhu AI Architect</h1>", unsafe_allow_html=True)
 st.write("---")
 
 # Input Section
@@ -23,38 +24,43 @@ with col2:
     rooms = st.text_input("🛌 အခန်းအရေအတွက်", "3 Bedrooms, 2 Bathrooms")
     style = st.selectbox("🎨 ဗိသုကာစတိုင်", ["Modern Minimalism", "Luxury Modern", "Classic European", "Tropical Burmese"])
 
+# --- IMAGE REFERENCE UPLOAD ---
+st.write("---")
+uploaded_file = st.file_uploader("📸 Reference အိမ်ပုံရှိလျှင် ထည့်ပေးပါ (Optional)", type=["jpg", "jpeg", "png"])
+
+if uploaded_file is not None:
+    img = Image.open(uploaded_file)
+    st.image(img, caption="လူကြီးမင်း ထည့်လိုက်သော Reference ပုံ", width=300)
+
 # Generate Button
-if st.button("✨ အိမ်ဒီဇိုင်းနှင့် Floor Plan အလိုအလျောက် ထုတ်ယူရန်"):
-    with st.spinner("AI မှ ပုံဖော်ပေးနေပါသည်... ခဏစောင့်ပါ..."):
-        try:
-            # 1. Gemini Pro ဖြင့် Prompt ထုတ်ယူခြင်း
-            model = genai.GenerativeModel('gemini-1.5-pro')
-            system_instruction = f"Architect for AungMyinMhu Construction. Generate 1 short, detailed image prompt for a {style} style {floors} home on {plot_size} plot with {rooms}. Focus on visual beauty."
-            
-            response = model.generate_content(system_instruction)
-            generated_prompt = response.text
-            
-            # 2. ပုံထုတ်ရန် URL ပြင်ဆင်ခြင်း (Using Pollinations.ai - Free Image API)
-            encoded_prompt = urllib.parse.quote(generated_prompt)
-            # 3D Exterior Image
-            image_url_3d = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1080&height=1920&nologo=true"
-            # 2D Floor Plan Image (Prompt ကို အနည်းငယ် ပြင်ဆင်ခြင်း)
-            floor_plan_prompt = urllib.parse.quote(f"Professional 2D floor plan blueprint for {plot_size} {floors} home, {rooms}, black and white technical drawing, architecture style.")
-            image_url_2d = f"https://image.pollinations.ai/prompt/{floor_plan_prompt}?width=1024&height=1024&nologo=true"
+if st.button("✨ ဒီဇိုင်းအသစ် ဖန်တီးရန်"):
+    if GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
+        st.warning("ကျေးဇူးပြု၍ API Key ကို အရင်ထည့်ပေးပါဗျ။")
+    else:
+        with st.spinner("AI မှ ပုံကို လေ့လာပြီး ဒီဇိုင်းဆွဲပေးနေပါသည်..."):
+            try:
+                # Gemini Pro 1.5 Model သုံးခြင်း
+                model = genai.GenerativeModel('gemini-1.5-pro')
+                
+                prompt = f"Architect for AungMyinMhu Construction. Generate 1 very short and artistic image prompt for a {style} style {floors} home on {plot_size} plot with {rooms}."
+                
+                if uploaded_file is not None:
+                    prompt += " Use the architectural details and color palette from the provided image."
+                    response = model.generate_content([prompt, img])
+                else:
+                    response = model.generate_content(prompt)
+                
+                generated_prompt = response.text
+                
+                # ပုံထုတ်ပေးသည့်အပိုင်း (Pollinations AI)
+                encoded_prompt = urllib.parse.quote(generated_prompt)
+                image_url_3d = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
+                
+                st.success("ဒီဇိုင်းအသစ် ထွက်လာပါပြီ!")
+                st.image(image_url_3d, caption="AungMyinMhu New Design Result", use_column_width=True)
 
-            # 3. ရလဒ်များကို ပြသခြင်း
-            st.success("အောင်မြင်စွာ ထုတ်လုပ်ပြီးပါပြီ!")
-            
-            st.subheader("🎨 3D Exterior View")
-            st.image(image_url_3d, caption=f"AungMyinMhu {style} Design", use_column_width=True)
-            
-            st.subheader("📋 2D Floor Plan (Blueprint)")
-            st.image(image_url_2d, caption="Architectural Layout", use_column_width=True)
-            
-            st.info(f"**AI Prompt:** {generated_prompt}")
-
-        except Exception as e:
-            st.error(f"Error တက်သွားပါသည်: {e}")
+            except Exception as e:
+                st.error(f"Error တက်သွားပါသည်: {e}")
 
 st.write("---")
-st.caption("© 2026 AungMyinMhu Construction | Powered by Gemini Pro")
+st.caption("© 2026 AungMyinMhu Construction | Powered by Gemini 1.5 Pro")
