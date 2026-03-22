@@ -34,33 +34,36 @@ if uploaded_file is not None:
 
 # Generate Button
 if st.button("✨ ဒီဇိုင်းအသစ် ဖန်တီးရန်"):
-    if GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
-        st.warning("ကျေးဇူးပြု၍ API Key ကို အရင်ထည့်ပေးပါဗျ။")
+    if GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE" or GEMINI_API_KEY == "":
+        st.error("ကျေးဇူးပြု၍ API Key ကို GitHub က app.py ထဲမှာ သေချာထည့်ပေးပါဗျ။")
     else:
         with st.spinner("AI မှ ပုံကို လေ့လာပြီး ဒီဇိုင်းဆွဲပေးနေပါသည်..."):
             try:
-                # Gemini Pro 1.5 Model သုံးခြင်း
-                model = genai.GenerativeModel('gemini-1.5-pro')
+                # Model ကို gemini-1.5-flash သို့ ပြောင်းလိုက်ပါသည် (ပိုမို တည်ငြိမ်ပြီး အလုပ်လုပ်တာ မြန်ပါသည်)
+                model = genai.GenerativeModel('gemini-1.5-flash')
                 
-                prompt = f"Architect for AungMyinMhu Construction. Generate 1 very short and artistic image prompt for a {style} style {floors} home on {plot_size} plot with {rooms}."
+                prompt = f"Professional Architect for AungMyinMhu Construction. Generate 1 short, detailed image prompt for a {style} style {floors} home on {plot_size} plot with {rooms}."
                 
                 if uploaded_file is not None:
-                    prompt += " Use the architectural details and color palette from the provided image."
+                    prompt += " Look at the attached image carefully. Maintain the similar architectural vibes, roof color, and design elements but adapt it into the new layout."
                     response = model.generate_content([prompt, img])
                 else:
                     response = model.generate_content(prompt)
                 
                 generated_prompt = response.text
                 
-                # ပုံထုတ်ပေးသည့်အပိုင်း (Pollinations AI)
+                # Image Generation (Pollinations AI)
                 encoded_prompt = urllib.parse.quote(generated_prompt)
-                image_url_3d = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
+                image_url_3d = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed=123"
                 
-                st.success("ဒီဇိုင်းအသစ် ထွက်လာပါပြီ!")
+                st.success("Reference ကို အခြေခံပြီး ဒီဇိုင်းအသစ် ထွက်လာပါပြီ!")
                 st.image(image_url_3d, caption="AungMyinMhu New Design Result", use_column_width=True)
+                
+                with st.expander("AI က ထုတ်ပေးလိုက်သော Prompt ကို ကြည့်ရန်"):
+                    st.write(generated_prompt)
 
             except Exception as e:
                 st.error(f"Error တက်သွားပါသည်: {e}")
 
 st.write("---")
-st.caption("© 2026 AungMyinMhu Construction | Powered by Gemini 1.5 Pro")
+st.caption("© 2026 AungMyinMhu Construction | Powered by Gemini 1.5 Flash")
