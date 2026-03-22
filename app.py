@@ -63,4 +63,3 @@ if st.button("✨ ဒီဇိုင်းအသစ် ဖန်တီးရန�
                 st.error(f"Error တက်သွားပါသည်: {e}")
 
 st.write("---")
-st.caption("© 2026 AungMyinMhu Construction | Powered by Gemini 1.5 Flash")
