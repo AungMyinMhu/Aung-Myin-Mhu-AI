@@ -7,7 +7,7 @@ st.set_page_config(page_title="AungMyinMhu AI Architect Pro", layout="centered")
 
 # --- API KEY CONFIG ---
 # လူကြီးမင်း၏ API Key ကို ဒီမှာ ထည့်သွင်းပါ
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"
+GEMINI_API_KEY = "AIzaSyCiECGk368a5xVYmI5ZNwTj7exGCVr5yYw"
 genai.configure(api_key=GEMINI_API_KEY)
 
 # --- APP UI ---
