@@ -1,65 +1,85 @@
 import streamlit as st
-import google.generativeai as genai
-import urllib.parse
+from google import genai
 from PIL import Image
+import urllib.parse
+import requests
+from io import BytesIO
 
-# Page Config
-st.set_page_config(page_title="AungMyinMhu AI Architect", layout="centered")
+# Page Setup
+st.set_page_config(page_title="AungMyinMhu AI Architect Pro", layout="centered")
 
-# --- API KEY (ဒီနေရာမှာ လူကြီးမင်းရဲ့ API Key သေချာထည့်ပါ) ---
-API_KEY = "AIzaSyCiECGk368a5xVYmI5ZNwTj7exGCVr5yYw" 
-genai.configure(api_key=API_KEY)
+# --- API KEY CONFIG ---
+# လူကြီးမင်း၏ API Key ကို ဒီနေရာမှာ သေချာထည့်ပါ
+MY_API_KEY = "AIzaSyCiECGk368a5xVYmI5ZNwTj7exGCVr5yYw"
+client = genai.Client(api_key=MY_API_KEY)
 
 st.markdown("<h1 style='text-align: center; color: #d4af37;'>🏠 AungMyinMhu AI Architect</h1>", unsafe_allow_html=True)
 st.write("---")
 
-# Inputs
-plot_size = st.text_input("📏 မြေကွက်အကျယ်", "40ft x 60ft")
-floors = st.selectbox("🏢 အလွှာ", ["၁ ထပ်", "၂ ထပ်", "၃ ထပ်"])
-style = st.selectbox("🎨 စတိုင်", ["Modern Minimalism", "Luxury Modern", "Tropical Burmese"])
+# User Inputs
+col1, col2 = st.columns(2)
+with col1:
+    plot_size = st.text_input("📏 မြေကွက်အကျယ် (ပေ)", "40ft x 60ft")
+    floors = st.selectbox("🏢 အလွှာအရေအတွက်", ["၁ ထပ်", "၂ ထပ်", "၃ ထပ်", "ထပ်ခိုးပါ"])
+with col2:
+    # --- အိပ်ခန်းအရေအတွက် ထည့်သွင်းခြင်း ---
+    rooms = st.text_input("🛌 အိပ်ခန်းအရေအတွက်", "3 Bedrooms, 2 Bathrooms")
+    style = st.selectbox("🎨 ဗိသုကာစတိုင်", ["Modern Minimalism", "Luxury Modern", "Classic European", "Tropical Burmese"])
 
-uploaded_file = st.file_uploader("📸 Reference ပုံထည့်ရန်", type=["jpg", "png", "jpeg"])
+# --- စိတ်ကြိုက် Prompt ရေးနိုင်သည့်နေရာ ---
+custom_notes = st.text_area("✍️ အခြားအသေးစိတ် လိုချင်တာများ (Custom Prompt)", 
+                            placeholder="ဥပမာ - ရေကူးကန်ပါရမယ်၊ အိမ်ရှေ့မှာ ခြံဝင်းအကျယ်ကြီးထားပေးပါ၊ အမိုးက အပြာရောင်ဖြစ်ရမယ်...")
+
+uploaded_file = st.file_uploader("📸 Reference အိမ်ပုံထည့်ရန် (Optional)", type=["jpg", "png", "jpeg"])
 if uploaded_file:
     img = Image.open(uploaded_file)
-    st.image(img, caption="လူကြီးမင်း ထည့်လိုက်သော Reference ပုံ", width=300)
+    st.image(img, caption="Reference ပုံ", width=300)
 
 if st.button("✨ ဒီဇိုင်းသစ် ထုတ်လုပ်ရန်"):
-    if not API_KEY or "YOUR" in API_KEY:
-        st.error("API Key ကို GitHub မှာ သေချာပြန်ထည့်ပေးပါဦးဗျ။")
+    if "YOUR" in MY_API_KEY:
+        st.error("API Key ထည့်ဖို့ မမေ့ပါနဲ့ဦးဗျ။")
     else:
-        with st.spinner("AI မှ ပုံဖော်ပေးနေပါသည်..."):
+        with st.spinner("AI စနစ်အသစ်ဖြင့် ပုံဖော်ပေးနေပါသည်..."):
             try:
-                # 2026 ခုနှစ်အတွက် နောက်ဆုံးထွက် Model နာမည်များကို အစဉ်လိုက် စမ်းသပ်ခြင်း
-                # တစ်ခုခု Error တက်ရင် နောက်တစ်ခုကို အလိုအလျောက် ပြောင်းသုံးပါလိမ့်မယ်
-                models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+                # Prompt တည်ဆောက်ခြင်း
+                prompt_text = (f"Professional Architect for AungMyinMhu Construction. "
+                               f"Generate 1 high-quality exterior image prompt for a {style} style {floors} home "
+                               f"on a {plot_size} plot with {rooms}. ")
                 
-                response = None
-                prompt = f"Architect for AungMyinMhu Construction. {style} {floors} home on {plot_size} plot. High quality exterior design."
+                if custom_notes:
+                    prompt_text += f"Additional Requirements: {custom_notes}. "
                 
-                for model_name in models_to_try:
-                    try:
-                        model = genai.GenerativeModel(model_name)
-                        if uploaded_file:
-                            response = model.generate_content([prompt, img])
-                        else:
-                            response = model.generate_content(prompt)
-                        if response: break
-                    except:
-                        continue
+                contents_list = [prompt_text]
+                if uploaded_file:
+                    contents_list.append(img)
                 
-                if response:
-                    # Image Generation (Pollinations AI)
-                    clean_text = response.text.replace("\n", " ").strip()[:200]
-                    encoded_prompt = urllib.parse.quote(clean_text)
-                    image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
-                    
-                    st.success("အောင်မြင်စွာ ထုတ်လုပ်ပြီးပါပြီ!")
-                    st.image(image_url, use_column_width=True)
-                else:
-                    st.error("Model ချိတ်ဆက်မှု အဆင်မပြေပါ။ ခဏနေမှ ပြန်စမ်းကြည့်ပါဗျ။")
-            
+                # Gemini 2.0 Flash ကို သုံးထားပါသည်
+                response = client.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=contents_list
+                )
+                
+                generated_prompt = response.text
+                
+                # Image Generation (Pollinations AI)
+                encoded_prompt = urllib.parse.quote(generated_prompt[:250])
+                image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed=42"
+                
+                st.success("အောင်မြင်စွာ ထုတ်လုပ်ပြီးပါပြီ!")
+                st.image(image_url, caption="AungMyinMhu New Design", use_column_width=True)
+                
+                # --- Download Button ထည့်သွင်းခြင်း ---
+                img_response = requests.get(image_url)
+                btn = st.download_button(
+                    label="📥 ဒီဇိုင်းပုံကို သိမ်းဆည်းရန်",
+                    data=img_response.content,
+                    file_name="AungMyinMhu_Design.png",
+                    mime="image/png"
+                )
+                
             except Exception as e:
                 st.error(f"Error: {e}")
 
 st.write("---")
-st.caption("© 2026 AungMyinMhu Construction")
+st.caption("© 2026 AungMyinMhu Construction | Powered by Gemini 2.0 Flash")
+
